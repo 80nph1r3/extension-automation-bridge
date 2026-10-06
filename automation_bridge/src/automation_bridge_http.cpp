@@ -1856,17 +1856,22 @@ namespace dmAutomationBridge
         }
         // The wheel is always a plain mouse input. A chord or a touch device it cannot
         // apply fails the request instead of silently becoming an unmodified mouse wheel.
-        if (RequestGetParam(ctx, "modifiers"))
+        // RequestGetParam returns 0 for a JSON list, object, or null, so presence comes
+        // from RequestHasParam: any supplied value is checked, not only a string.
+        if (RequestHasParam(ctx, "modifiers"))
         {
             RequestSendError(ctx, 400, "bad_request", "modifiers are not supported by /input/wheel");
             return;
         }
-        const char* device_text = RequestGetParam(ctx, "device");
-        InputDevice device = INPUT_DEVICE_MOUSE;
-        if (!IsEmpty(device_text) && (!ParseInputDevice(device_text, &device) || device == INPUT_DEVICE_TOUCH))
+        if (RequestHasParam(ctx, "device"))
         {
-            RequestSendError(ctx, 400, "bad_request", "device must be auto or mouse; the wheel is a mouse input");
-            return;
+            const char* device_text = RequestGetParam(ctx, "device");
+            InputDevice device = INPUT_DEVICE_MOUSE;
+            if (IsEmpty(device_text) || !ParseInputDevice(device_text, &device) || device == INPUT_DEVICE_TOUCH)
+            {
+                RequestSendError(ctx, 400, "bad_request", "device must be auto or mouse; the wheel is a mouse input");
+                return;
+            }
         }
         const char* client_id = 0;
         const char* session_id = 0;

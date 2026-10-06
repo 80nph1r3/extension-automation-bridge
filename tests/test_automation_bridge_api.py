@@ -5066,7 +5066,13 @@ class AutomationBridgeApiTest(unittest.TestCase):
             {"steps": steps} for steps in (None, 0, -65, 65, 1.5, True, "", "abc", "+1", " 1", "-", "-0")
         ]
         # The wheel is a plain mouse input: a chord or touch is refused, not dropped.
-        invalid_wheel_fields += [{"steps": 1, "modifiers": "KEY_LCTRL"}, {"steps": 1, "device": "touch"}]
+        # A JSON list, object, or null must fail too, not read as an absent field.
+        invalid_wheel_fields += [
+            {"steps": 1, "modifiers": modifiers} for modifiers in ("KEY_LCTRL", ["KEY_LCTRL"], None)
+        ]
+        invalid_wheel_fields += [
+            {"steps": 1, "device": device} for device in ("touch", {"type": "touch"}, "", None)
+        ]
         for fields in invalid_wheel_fields:
             with self.subTest(invalid_wheel=fields):
                 with self.assertRaises(AutomationBridgeApiError) as invalid_wheel:
